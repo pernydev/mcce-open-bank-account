@@ -1,11 +1,11 @@
-import { AWS_ACCESS_KEY_ID, AWS_ENDPOINT_URL_S3, AWS_SECRET_ACCESS_KEY, BUCKET_NAME, CRON_SECRET, GCL_ACCOUNT_ID, GCL_SECRET_ID, GCL_SECRET_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import type { Transaction } from '$lib/types';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request }) => {
     const cronToken = request.headers.get('x-cron-token');
-    if ((cronToken || "") !== CRON_SECRET) {
+    if ((cronToken || "") !== env.CRON_SECRET) {
         return new Response('Unauthorized', { status: 401 });   
     }
 
@@ -17,8 +17,8 @@ export const POST: RequestHandler = async ({ request }) => {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            secret_id: GCL_SECRET_ID,
-            secret_key: GCL_SECRET_KEY
+            secret_id: env.GCL_SECRET_ID,
+            secret_key: env.GCL_SECRET_KEY
         })
     });
     const bodyString = await token.text();
@@ -57,10 +57,10 @@ export const POST: RequestHandler = async ({ request }) => {
     });
 
     const s3 = new Bun.S3Client({
-        accessKeyId: AWS_ACCESS_KEY_ID,
-        secretAccessKey: AWS_SECRET_ACCESS_KEY,
-        endpoint: AWS_ENDPOINT_URL_S3,
-        bucket: BUCKET_NAME
+        accessKeyId: env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+        endpoint: env.AWS_ENDPOINT_URL_S3,
+        bucket: env.BUCKET_NAME
     });
 
     const transactions = s3.file('transactions.json');

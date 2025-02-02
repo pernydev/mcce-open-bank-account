@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PUBLIC_BALANCE_DATA_URL, PUBLIC_TRANSACTIONS_DATA_URL } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 	import { SEK_USD_RATE } from '$lib/constants';
 	import { BalanceType, type Balance, type Transaction } from '$lib/types';
 	import { onMount } from 'svelte';
@@ -9,14 +9,14 @@
 	let currencyFormat: 'original' | 'usd' = $state('original');
 
 	async function getTransactions() {
-		const response = await fetch(PUBLIC_TRANSACTIONS_DATA_URL);
+		const response = await fetch(env.PUBLIC_TRANSACTIONS_DATA_URL);
 		const body = await response.json();
 		bookedTransactions = body.transactions.booked;
 		pendingTransactions = body.transactions.pending;
 	}
 
 	async function getBalances() {
-		const response = await fetch(PUBLIC_BALANCE_DATA_URL);
+		const response = await fetch(env.PUBLIC_BALANCE_DATA_URL);
 		balances = (await response.json()).balances;
 	}
 
