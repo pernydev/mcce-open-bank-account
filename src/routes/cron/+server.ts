@@ -29,7 +29,7 @@ export const POST: RequestHandler = async ({ request }) => {
     }
     const accessToken = body.access;
 
-    const transactionsResp = await fetch(`https://bankaccountdata.gocardless.com/api/v2/accounts/${GCL_ACCOUNT_ID}/transactions/`, {
+    const transactionsResp = await fetch(`https://bankaccountdata.gocardless.com/api/v2/accounts/${env.GCL_ACCOUNT_ID}/transactions/`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
