@@ -1,0 +1,1 @@
+export const SEK_USD_RATE = 0.090100016;
