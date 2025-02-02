@@ -47,10 +47,9 @@ export const POST: RequestHandler = async ({ request }) => {
     transactionsBody.transactions.booked.forEach(t => {
         console.log(t);
         bookedTransactions.push({
-            remittanceInformationStructured: t.remittanceInformationStructured,
+            remittanceInformationUnstructured: t.remittanceInformationUnstructured,
             creditorName: t.creditorName,
             transactionAmount: t.transactionAmount,
-            bookingDate: t.bookingDate,
             valueDate: t.valueDate
         });
         return t;

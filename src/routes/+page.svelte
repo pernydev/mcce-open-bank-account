@@ -72,8 +72,8 @@
 			<tbody class="divide-y divide-mantle">
 				{#each transactions as transaction}
 					<tr>
-						<td class="text-left">{transaction.bookingDate || '-'}</td>
-						<td class="text-left">{transaction.remittanceInformationStructured || '-'}</td>
+						<td class="text-left">{transaction.valueDate || '-'}</td>
+						<td class="text-left">{transaction.remittanceInformationUnstructured || '-'}</td>
 						<td class="text-left">{transaction.creditorName || '-'}</td>
 						<td class="text-right">
 							{#if transaction.transactionAmount}

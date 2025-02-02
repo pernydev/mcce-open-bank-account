@@ -4,10 +4,9 @@ export interface Amount {
 }
 
 export interface Transaction {
-	remittanceInformationStructured?: string;
+	remittanceInformationUnstructured?: string;
 	creditorName?: string;
 	transactionAmount?: Amount;
-	bookingDate?: string;
 	valueDate?: string;
 }
 
