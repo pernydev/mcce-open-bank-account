@@ -71,7 +71,7 @@ export const POST: RequestHandler = async ({ request }) => {
         }
     }));
 
-    const balancesResp = await fetch(`https://bankaccountdata.gocardless.com/api/v2/accounts/${GCL_ACCOUNT_ID}/balances/`, {
+    const balancesResp = await fetch(`https://bankaccountdata.gocardless.com/api/v2/accounts/${env.GCL_ACCOUNT_ID}/balances/`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
