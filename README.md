@@ -1,4 +1,5 @@
 # MC:CE Open Bank Account
+![image](https://github.com/user-attachments/assets/83e7a1fb-ae3c-4865-82ae-b01541d8e55c)
 
 This is an application to view the MC:CE bank account balance and transactions.
 
