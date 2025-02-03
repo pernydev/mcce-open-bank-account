@@ -11,7 +11,7 @@
 	let totals: { in: number; out: number } = $derived(
 		calculateTotals([...pendingTransactions, ...bookedTransactions])
 	);
-	let percentageUsed: number = $derived(totals.in === 0 ? 0 : totals.out / totals.in);
+	let percentageUsed: number = $derived(totals.in === 0 ? 0 : 1 - (totals.out / totals.in));
 
 	async function getTransactions() {
 		const response = await fetch(env.PUBLIC_TRANSACTIONS_DATA_URL);
