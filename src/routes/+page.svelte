@@ -108,6 +108,7 @@
 {/snippet}
 
 <div class="mx-auto max-w-6xl px-2 pt-2 lg:pt-6">
+	<h1 class="sr-only">MC:CE Open Bank Account</h1>
 	<div class="flex-inline gap-4">
 		<button
 			class="border border-text p-2 {currencyFormat === 'original'
@@ -140,9 +141,14 @@
 		</div>
 	</div>
 
-	<div class="mt-8 flex gap-4">
-		{percentageUsed * 100}%
-		<div class="relative h-6 w-full bg-mantle">
+	<h2 class="text-xl font-bold mt-8 block mb-2" id="funding-left">
+		Funding left
+	</h2>
+	<div class="flex gap-4">
+		<span aria-labelledby="funding-left">
+			{percentageUsed * 100}%
+		</span>
+		<div class="relative h-6 w-full bg-mantle" aria-hidden="true">
 			<div
 				class="absolute left-0 top-0 h-full w-full bg-subtext0"
 				style="width: {percentageUsed * 100}%"
