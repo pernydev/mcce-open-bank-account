@@ -109,6 +109,7 @@
 
 <div class="mx-auto max-w-6xl px-2 pt-2 lg:pt-6">
 	<h1 class="sr-only">MC:CE Open Bank Account</h1>
+
 	<div class="flex-inline gap-4">
 		<button
 			class="border border-text p-2 {currencyFormat === 'original'
@@ -136,7 +137,8 @@
 			<p class="text-md text-subtext-0 mt-2">
 				This is an application to view the MC:CE bank account balance and transactions. It is
 				Open-Source under GPLv3 and available on
-				<a href="https://github.com/pernydev/mcce-open-bank-account" class="text-blue"> GitHub </a>.
+				<a href="https://github.com/pernydev/mcce-open-bank-account" class="text-blue"> GitHub </a>. For additinal transparency, we post banking statements
+				on <a href="https://discord.gg/mojanglawsuit" class="text-blue"> Discord </a>.
 			</p>
 		</div>
 	</div>
