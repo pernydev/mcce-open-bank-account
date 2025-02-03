@@ -12,7 +12,6 @@ export interface Transaction {
 
 export enum BalanceType {
 	INTERIM_AVAILABLE = 'interimAvailable',
-	INTERIM_BOOKED = 'interimBooked'
 }
 
 export interface Balance {

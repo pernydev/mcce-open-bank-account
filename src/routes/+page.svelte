@@ -44,18 +44,14 @@
 </script>
 
 {#snippet balanceCard(balanceType: BalanceType, balance: Balance)}
-	<div class="min§w-[300px] flex flex-col gap-2 bg-mantle p-4">
-		<span class="text-lg font-bold text-subtext0">
-			{#if balanceType === BalanceType.INTERIM_AVAILABLE}
-				Interim Available
-			{:else if balanceType === BalanceType.INTERIM_BOOKED}
-				Interim Booked
-			{/if}
-		</span>
-		<span class="text-2xl font-bold">
-			{f(balance.balanceAmount.currency, balance.balanceAmount.amount)}
-		</span>
-	</div>
+	{#if balanceType === BalanceType.INTERIM_AVAILABLE}
+		<div class="flex min-w-[300px] flex-col gap-2 bg-mantle p-4">
+			<span class="text-lg font-bold text-subtext0"> Available </span>
+			<span class="text-2xl font-bold">
+				{f(balance.balanceAmount.currency, balance.balanceAmount.amount)}
+			</span>
+		</div>
+	{/if}
 {/snippet}
 
 {#snippet transactions(transactions: Transaction[])}
