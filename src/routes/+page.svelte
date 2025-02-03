@@ -3,10 +3,15 @@
 	import { SEK_USD_RATE } from '$lib/constants';
 	import { BalanceType, type Balance, type Transaction } from '$lib/types';
 	import { onMount } from 'svelte';
+
 	let pendingTransactions: Transaction[] = $state([]);
 	let bookedTransactions: Transaction[] = $state([]);
 	let balances: Balance[] = $state([]);
 	let currencyFormat: 'original' | 'usd' = $state('original');
+	let totals: { in: number; out: number } = $derived(
+		calculateTotals([...pendingTransactions, ...bookedTransactions])
+	);
+	let percentageUsed: number = $derived(totals.in === 0 ? 0 : totals.out / totals.in);
 
 	async function getTransactions() {
 		const response = await fetch(env.PUBLIC_TRANSACTIONS_DATA_URL);
@@ -35,6 +40,23 @@
 			});
 			return formatter.format(int * SEK_USD_RATE);
 		}
+	}
+
+	function calculateTotals(transactions: Transaction[]): { in: number; out: number } {
+		let inAmount = 0;
+		let outAmount = 0;
+		transactions.forEach((t) => {
+			if (!t.transactionAmount) {
+				return;
+			}
+
+			if (t.transactionAmount.amount.startsWith('-')) {
+				outAmount += parseFloat(t.transactionAmount.amount.substring(1));
+				return;
+			}
+			inAmount += parseFloat(t.transactionAmount.amount);
+		});
+		return { in: inAmount, out: outAmount };
 	}
 
 	onMount(async () => {
@@ -115,6 +137,16 @@
 				Open-Source under GPLv3 and available on
 				<a href="https://github.com/pernydev/mcce-open-bank-account" class="text-blue"> GitHub </a>.
 			</p>
+		</div>
+	</div>
+
+	<div class="mt-8 flex gap-4">
+		{percentageUsed * 100}%
+		<div class="relative h-6 w-full bg-mantle">
+			<div
+				class="absolute left-0 top-0 h-full w-full bg-subtext0"
+				style="width: {percentageUsed * 100}%"
+			></div>
 		</div>
 	</div>
 
