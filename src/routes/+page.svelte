@@ -142,12 +142,12 @@
 				This is an application to view the MC:CE bank account balance and transactions. It is
 				Open-Source under GPLv3 and available on
 				<a href="https://github.com/pernydev/mcce-open-bank-account" class="text-blue"> GitHub </a>.
-				For additinal transparency, we post banking statements on
+				For additional transparency, we post banking statements on
 				<a href="https://discord.gg/mojanglawsuit" class="text-blue"> Discord </a>.
 			</p>
 		</div>
 	</div>
-
+	
 	<h2 class="mb-2 mt-8 block text-xl font-bold" id="funding-left">Funding left</h2>
 	<div class="flex gap-4">
 		<span aria-labelledby="funding-left">
