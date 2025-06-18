@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { env } from '$env/dynamic/public';
-	import { SEK_USD_RATE } from '$lib/constants';
+	import { fetchSEKUSDRate, SEK_USD_RATE } from '$lib/conversion';
 	import { BalanceType, type Balance, type Transaction } from '$lib/types';
 	import { onMount } from 'svelte';
 
@@ -11,7 +11,7 @@
 	let totals: { in: number; out: number } = $derived(
 		calculateTotals([...pendingTransactions, ...bookedTransactions])
 	);
-	let percentageUsed: number = $derived(totals.in === 0 ? 0 : 1 - (totals.out / totals.in));
+	let percentageUsed: number = $derived(totals.in === 0 ? 0 : 1 - totals.out / totals.in);
 
 	async function getTransactions() {
 		const response = await fetch(env.PUBLIC_TRANSACTIONS_DATA_URL);
@@ -34,6 +34,9 @@
 			});
 			return formatter.format(int);
 		} else {
+			if (SEK_USD_RATE === null) {
+				return 'Loading...';
+			}
 			const formatter = new Intl.NumberFormat('en-US', {
 				style: 'currency',
 				currency: 'USD'
@@ -62,6 +65,7 @@
 	onMount(async () => {
 		await getTransactions();
 		await getBalances();
+		fetchSEKUSDRate();
 	});
 </script>
 
@@ -137,15 +141,14 @@
 			<p class="text-md text-subtext-0 mt-2">
 				This is an application to view the MC:CE bank account balance and transactions. It is
 				Open-Source under GPLv3 and available on
-				<a href="https://github.com/pernydev/mcce-open-bank-account" class="text-blue"> GitHub </a>. For additinal transparency, we post banking statements
-				on <a href="https://discord.gg/mojanglawsuit" class="text-blue"> Discord </a>.
+				<a href="https://github.com/pernydev/mcce-open-bank-account" class="text-blue"> GitHub </a>.
+				For additinal transparency, we post banking statements on
+				<a href="https://discord.gg/mojanglawsuit" class="text-blue"> Discord </a>.
 			</p>
 		</div>
 	</div>
 
-	<h2 class="text-xl font-bold mt-8 block mb-2" id="funding-left">
-		Funding left
-	</h2>
+	<h2 class="mb-2 mt-8 block text-xl font-bold" id="funding-left">Funding left</h2>
 	<div class="flex gap-4">
 		<span aria-labelledby="funding-left">
 			{percentageUsed * 100}%
@@ -158,8 +161,20 @@
 		</div>
 	</div>
 
-	<h2 class="mb-6 mt-16 text-xl font-bold">Pending Transactions</h2>
-	{@render transactions(pendingTransactions)}
+	{#if pendingTransactions.length !== 0}
+		<h2 class="mb-6 mt-16 text-xl font-bold">Pending Transactions</h2>
+		{@render transactions(pendingTransactions)}
+	{/if}
+
 	<h2 class="mb-6 mt-16 text-xl font-bold">Booked Transactions</h2>
 	{@render transactions(bookedTransactions)}
+
+	<div class="flex gap-8">
+		<a href="https://www.exchangerate-api.com" class="mt-8 block text-xs text-blue"
+			>Rates By Exchange Rate API</a
+		>
+		<a href="https://gocardless.com/bank-account-data/" class="mt-8 block text-xs text-blue"
+			>Bank Account Data By GoCardless</a
+		>
+	</div>
 </div>
