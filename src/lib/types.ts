@@ -12,10 +12,10 @@ export interface Transaction {
 }
 
 export interface APIAccountTransactions {
-    transactions: {
-        booked: Transaction[];
-        pending?: Transaction[];
-    };
+	transactions: {
+		booked: Transaction[];
+		pending?: Transaction[];
+	};
 }
 
 export enum BalanceType {
