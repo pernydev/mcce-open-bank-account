@@ -11,6 +11,13 @@ export interface Transaction {
 	valueDate?: string;
 }
 
+export interface APIAccountTransactions {
+    transactions: {
+        booked: Transaction[];
+        pending?: Transaction[];
+    };
+}
+
 export enum BalanceType {
 	INTERIM_AVAILABLE = 'interimAvailable',
 }

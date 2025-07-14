@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/private';
-import type { Transaction } from '$lib/types';
+import type { APIAccountTransactions, Transaction } from '$lib/types';
 import { json } from '@sveltejs/kit';
 
 export const POST = async ({ request }) => {
@@ -39,7 +39,7 @@ export const POST = async ({ request }) => {
             Authorization: `Bearer ${accessToken}`
         }
     });
-    const transactionsBody: AccountTransactions = await transactionsResp.json();
+    const transactionsBody: APIAccountTransactions = await transactionsResp.json();
     if (transactionsResp.status !== 200) {
         console.log(transactionsBody);
         return new Response('Failed to get transactions', { status: 500 });
@@ -97,14 +97,4 @@ export const POST = async ({ request }) => {
     return json({
         message: 'ok'
     });
-};
-
-
-
-// simplified to relevant fields
-type AccountTransactions = {
-    transactions: {
-        booked: Transaction[];
-        pending?: Transaction[];
-    };
 };
