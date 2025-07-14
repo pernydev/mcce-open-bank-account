@@ -6,7 +6,6 @@ export interface Amount {
 export interface Transaction {
 	remittanceInformationUnstructured?: string;
 	creditorName?: string;
-	// field is always present
 	transactionAmount: Amount;
 	valueDate?: string;
 }
@@ -25,4 +24,13 @@ export enum BalanceType {
 export interface Balance {
 	balanceAmount: Amount;
 	balanceType: BalanceType;
+}
+
+export interface APIAccountBalance {
+	// lazy :-)
+	balances: object;
+}
+
+export interface APIJWTToken {
+	access: string;
 }

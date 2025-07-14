@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/private';
-import type { APIAccountTransactions, Transaction } from '$lib/types';
+import type { APIAccountBalance, APIAccountTransactions, APIJWTToken, Transaction } from '$lib/types';
 import { json } from '@sveltejs/kit';
 
 export const POST = async ({ request }) => {
@@ -22,9 +22,9 @@ export const POST = async ({ request }) => {
 			secret_key: env.GCL_SECRET_KEY
 		})
 	});
-	const bodyString = await token.text();
-	console.log(bodyString);
-	const body = JSON.parse(bodyString);
+
+	const body: APIJWTToken = await token.json();
+	console.log(JSON.stringify(body));
 	if (token.status !== 200) {
 		return new Response('Failed to get access token', { status: 401 });
 	}
@@ -83,7 +83,7 @@ export const POST = async ({ request }) => {
 			Authorization: `Bearer ${accessToken}`
 		}
 	});
-	const balancesBody = await balancesResp.json();
+	const balancesBody: APIAccountBalance = await balancesResp.json();
 	if (balancesResp.status !== 200) {
 		console.log(balancesBody);
 		return new Response('Failed to get balances', { status: 500 });
