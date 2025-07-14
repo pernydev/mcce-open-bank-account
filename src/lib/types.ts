@@ -6,7 +6,8 @@ export interface Amount {
 export interface Transaction {
 	remittanceInformationUnstructured?: string;
 	creditorName?: string;
-	transactionAmount?: Amount;
+	// field is always present
+	transactionAmount: Amount;
 	valueDate?: string;
 }
 

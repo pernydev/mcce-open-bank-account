@@ -1,11 +1,12 @@
 import { env } from '$env/dynamic/private';
 import type { Transaction } from '$lib/types';
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST = async ({ request }) => {
     const cronToken = request.headers.get('x-cron-token');
-    if ((cronToken || "") !== env.CRON_SECRET) {
+    // don't need to || "" cronToken;
+    // typeof env.CRON_SECRET is always a string, never null
+    if (cronToken !== env.CRON_SECRET) {
         return new Response('Unauthorized', { status: 401 });
     }
 
@@ -38,24 +39,27 @@ export const POST: RequestHandler = async ({ request }) => {
             Authorization: `Bearer ${accessToken}`
         }
     });
-    const transactionsBody = await transactionsResp.json();
+    const transactionsBody: AccountTransactions = await transactionsResp.json();
     if (transactionsResp.status !== 200) {
         console.log(transactionsBody);
         return new Response('Failed to get transactions', { status: 500 });
     }
 
+
+    // TODO: cleaner way to type this?
+    const allowedKeys = ["remittanceInformationUnstructured", "creditorName", "transactionAmount", "valueDate"] as (keyof Transaction)[];
+
     // filter out sensitive data
-    const bookedTransactions: Transaction[] = []
-    transactionsBody.transactions.booked.forEach(t => {
+    const bookedTransactions = transactionsBody.transactions.booked.map(t => {
         console.log(t);
-        bookedTransactions.push({
-            remittanceInformationUnstructured: t.remittanceInformationUnstructured,
-            creditorName: t.creditorName,
-            transactionAmount: t.transactionAmount,
-            valueDate: t.valueDate
-        });
-        return t;
+
+        return Object.fromEntries(
+            // array of key-value pairs of allowed key and current transactions' corresponding value,
+            // then turn it back into an object (fromEntries)
+            allowedKeys.map(key => [key, t[key]])
+        );
     });
+
 
     const s3 = new Bun.S3Client({
         accessKeyId: env.AWS_ACCESS_KEY_ID,
@@ -93,4 +97,14 @@ export const POST: RequestHandler = async ({ request }) => {
     return json({
         message: 'ok'
     });
+};
+
+
+
+// simplified to relevant fields
+type AccountTransactions = {
+    transactions: {
+        booked: Transaction[];
+        pending?: Transaction[];
+    };
 };
