@@ -4,8 +4,6 @@ import type { APIAccountBalance, APIAccountTransactions, APIJWTToken, Transactio
 
 export const POST = async ({ request }) => {
 	const cronToken = request.headers.get('x-cron-token');
-	// don't need to || '' cronToken;
-	// typeof env.CRON_SECRET is always a string, never null
 	if (cronToken !== env.CRON_SECRET) {
 		return new Response('Unauthorized', { status: 401 });
 	}

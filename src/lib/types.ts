@@ -6,7 +6,7 @@ export interface Amount {
 export interface Transaction {
 	remittanceInformationUnstructured?: string;
 	creditorName?: string;
-	transactionAmount: Amount;
+	transactionAmount?: Amount;
 	valueDate?: string;
 }
 
@@ -27,7 +27,6 @@ export interface APIAccountTransactions {
 }
 
 export interface APIAccountBalance {
-	// lazy :-)
 	balances: object;
 }
 
