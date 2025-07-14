@@ -4,13 +4,13 @@ import { json } from '@sveltejs/kit';
 
 export const POST = async ({ request }) => {
     const cronToken = request.headers.get('x-cron-token');
-    // don't need to || "" cronToken;
+    // don't need to || '' cronToken;
     // typeof env.CRON_SECRET is always a string, never null
     if (cronToken !== env.CRON_SECRET) {
         return new Response('Unauthorized', { status: 401 });
     }
 
-    console.log("CRON JOB");
+    console.log('CRON JOB');
 
     const token = await fetch('https://bankaccountdata.gocardless.com/api/v2/token/new/', {
         method: 'POST',
@@ -47,7 +47,7 @@ export const POST = async ({ request }) => {
 
 
     // TODO: cleaner way to type this?
-    const allowedKeys = ["remittanceInformationUnstructured", "creditorName", "transactionAmount", "valueDate"] as (keyof Transaction)[];
+    const allowedKeys = ['remittanceInformationUnstructured', 'creditorName', 'transactionAmount', 'valueDate'] as (keyof Transaction)[];
 
     // filter out sensitive data
     const bookedTransactions = transactionsBody.transactions.booked.map(t => {
