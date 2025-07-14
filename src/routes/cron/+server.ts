@@ -6,7 +6,7 @@ import type { RequestHandler } from './$types';
 export const POST: RequestHandler = async ({ request }) => {
     const cronToken = request.headers.get('x-cron-token');
     if ((cronToken || "") !== env.CRON_SECRET) {
-        return new Response('Unauthorized', { status: 401 });   
+        return new Response('Unauthorized', { status: 401 });
     }
 
     console.log("CRON JOB");
