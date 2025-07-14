@@ -1,6 +1,6 @@
 import { env } from '$env/dynamic/private';
-import type { APIAccountBalance, APIAccountTransactions, APIJWTToken, Transaction } from '$lib/types';
 import { json } from '@sveltejs/kit';
+import type { APIAccountBalance, APIAccountTransactions, APIJWTToken, Transaction } from '$lib/types';
 
 export const POST = async ({ request }) => {
 	const cronToken = request.headers.get('x-cron-token');
@@ -25,9 +25,11 @@ export const POST = async ({ request }) => {
 
 	const body: APIJWTToken = await token.json();
 	console.log(JSON.stringify(body));
+
 	if (token.status !== 200) {
 		return new Response('Failed to get access token', { status: 401 });
 	}
+
 	const accessToken = body.access;
 
 	console.log(env.GCL_ACCOUNT_ID);
@@ -39,12 +41,12 @@ export const POST = async ({ request }) => {
 			Authorization: `Bearer ${accessToken}`
 		}
 	});
+
 	const transactionsBody: APIAccountTransactions = await transactionsResp.json();
 	if (transactionsResp.status !== 200) {
 		console.log(transactionsBody);
 		return new Response('Failed to get transactions', { status: 500 });
 	}
-
 
 	// TODO: cleaner way to type this?
 	const allowedKeys = ['remittanceInformationUnstructured', 'creditorName', 'transactionAmount', 'valueDate'] as (keyof Transaction)[];
@@ -83,6 +85,7 @@ export const POST = async ({ request }) => {
 			Authorization: `Bearer ${accessToken}`
 		}
 	});
+
 	const balancesBody: APIAccountBalance = await balancesResp.json();
 	if (balancesResp.status !== 200) {
 		console.log(balancesBody);
