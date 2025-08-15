@@ -147,7 +147,7 @@
 			</p>
 		</div>
 	</div>
-	
+
 	<h2 class="mb-2 mt-8 block text-xl font-bold" id="funding-left">Funding left</h2>
 	<div class="flex gap-4">
 		<span aria-labelledby="funding-left">

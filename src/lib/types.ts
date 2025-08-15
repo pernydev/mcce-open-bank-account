@@ -18,3 +18,18 @@ export interface Balance {
 	balanceAmount: Amount;
 	balanceType: BalanceType;
 }
+
+export interface APIAccountTransactions {
+	transactions: {
+		booked: Transaction[];
+		pending?: Transaction[];
+	};
+}
+
+export interface APIAccountBalance {
+	balances: object;
+}
+
+export interface APIJWTToken {
+	access: string;
+}

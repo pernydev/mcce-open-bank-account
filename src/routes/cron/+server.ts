@@ -1,96 +1,101 @@
 import { env } from '$env/dynamic/private';
-import type { Transaction } from '$lib/types';
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import type { APIAccountBalance, APIAccountTransactions, APIJWTToken, Transaction } from '$lib/types';
 
-export const POST: RequestHandler = async ({ request }) => {
-    const cronToken = request.headers.get('x-cron-token');
-    if ((cronToken || "") !== env.CRON_SECRET) {
-        return new Response('Unauthorized', { status: 401 });   
-    }
+export const POST = async ({ request }) => {
+	const cronToken = request.headers.get('x-cron-token');
+	if (cronToken !== env.CRON_SECRET) {
+		return new Response('Unauthorized', { status: 401 });
+	}
 
-    console.log("CRON JOB");
+	console.log('CRON JOB');
 
-    const token = await fetch('https://bankaccountdata.gocardless.com/api/v2/token/new/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            secret_id: env.GCL_SECRET_ID,
-            secret_key: env.GCL_SECRET_KEY
-        })
-    });
-    const bodyString = await token.text();
-    console.log(bodyString);
-    const body = JSON.parse(bodyString);
-    if (token.status !== 200) {
-        return new Response('Failed to get access token', { status: 401 });
-    }
-    const accessToken = body.access;
+	const token = await fetch('https://bankaccountdata.gocardless.com/api/v2/token/new/', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({
+			secret_id: env.GCL_SECRET_ID,
+			secret_key: env.GCL_SECRET_KEY
+		})
+	});
 
-    console.log(env.GCL_ACCOUNT_ID);
+	const body: APIJWTToken = await token.json();
+	console.log(JSON.stringify(body));
 
-    const transactionsResp = await fetch(`https://bankaccountdata.gocardless.com/api/v2/accounts/${env.GCL_ACCOUNT_ID}/transactions/`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`
-        }
-    });
-    const transactionsBody = await transactionsResp.json();
-    if (transactionsResp.status !== 200) {
-        console.log(transactionsBody);
-        return new Response('Failed to get transactions', { status: 500 });
-    }
+	if (token.status !== 200) {
+		return new Response('Failed to get access token', { status: 401 });
+	}
 
-    // filter out sensitive data
-    const bookedTransactions: Transaction[] = []
-    transactionsBody.transactions.booked.forEach(t => {
-        console.log(t);
-        bookedTransactions.push({
-            remittanceInformationUnstructured: t.remittanceInformationUnstructured,
-            creditorName: t.creditorName,
-            transactionAmount: t.transactionAmount,
-            valueDate: t.valueDate
-        });
-        return t;
-    });
+	const accessToken = body.access;
 
-    const s3 = new Bun.S3Client({
-        accessKeyId: env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
-        endpoint: env.AWS_ENDPOINT_URL_S3,
-        bucket: env.BUCKET_NAME
-    });
+	console.log(env.GCL_ACCOUNT_ID);
 
-    const transactions = s3.file('transactions.json');
-    await Bun.write(transactions, JSON.stringify({
-        transactions: {
-            booked: bookedTransactions,
-            pending: transactionsBody.transactions.pending
-        }
-    }));
+	const transactionsResp = await fetch(`https://bankaccountdata.gocardless.com/api/v2/accounts/${env.GCL_ACCOUNT_ID}/transactions/`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${accessToken}`
+		}
+	});
 
-    const balancesResp = await fetch(`https://bankaccountdata.gocardless.com/api/v2/accounts/${env.GCL_ACCOUNT_ID}/balances/`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`
-        }
-    });
-    const balancesBody = await balancesResp.json();
-    if (balancesResp.status !== 200) {
-        console.log(balancesBody);
-        return new Response('Failed to get balances', { status: 500 });
-    }
+	const transactionsBody: APIAccountTransactions = await transactionsResp.json();
+	if (transactionsResp.status !== 200) {
+		console.log(transactionsBody);
+		return new Response('Failed to get transactions', { status: 500 });
+	}
 
-    const balances = s3.file('balances.json');
-    await Bun.write(balances, JSON.stringify({
-        balances: balancesBody.balances
-    }));
+	// TODO: cleaner way to type this?
+	const allowedKeys = ['remittanceInformationUnstructured', 'creditorName', 'transactionAmount', 'valueDate'] as (keyof Transaction)[];
 
-    return json({
-        message: 'ok'
-    });
+	// filter out sensitive data
+	const bookedTransactions = transactionsBody.transactions.booked.map(t => {
+		console.log(t);
+
+		return Object.fromEntries(
+			// array of key-value pairs of allowed key and current transactions' corresponding value,
+			// then turn it back into an object (fromEntries)
+			allowedKeys.map(key => [key, t[key]])
+		);
+	});
+
+
+	const s3 = new Bun.S3Client({
+		accessKeyId: env.AWS_ACCESS_KEY_ID,
+		secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+		endpoint: env.AWS_ENDPOINT_URL_S3,
+		bucket: env.BUCKET_NAME
+	});
+
+	const transactions = s3.file('transactions.json');
+	await Bun.write(transactions, JSON.stringify({
+		transactions: {
+			booked: bookedTransactions,
+			pending: transactionsBody.transactions.pending
+		}
+	}));
+
+	const balancesResp = await fetch(`https://bankaccountdata.gocardless.com/api/v2/accounts/${env.GCL_ACCOUNT_ID}/balances/`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${accessToken}`
+		}
+	});
+
+	const balancesBody: APIAccountBalance = await balancesResp.json();
+	if (balancesResp.status !== 200) {
+		console.log(balancesBody);
+		return new Response('Failed to get balances', { status: 500 });
+	}
+
+	const balances = s3.file('balances.json');
+	await Bun.write(balances, JSON.stringify({
+		balances: balancesBody.balances
+	}));
+
+	return json({
+		message: 'ok'
+	});
 };

@@ -6,5 +6,5 @@ export async function fetchSEKUSDRate() {
         throw new Error("Failed to fetch SEK/USD rate");
     }
     const data = await resp.json();
-    SEK_USD_RATE = data.rates.USD; 
+    SEK_USD_RATE = data.rates.USD;
 }
