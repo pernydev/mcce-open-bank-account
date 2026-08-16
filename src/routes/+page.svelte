@@ -160,80 +160,80 @@
 	<header class="page-head">
 		<h1>Open bank account</h1>
 		<p class="lede">
-			A read-only view of the account holding the community funds, showing what is left and
-			every single movement in &amp; out.
+			A read-only view of the account holding the community funds, showing what is left and every
+			single movement in &amp; out.
 		</p>
 	</header>
 
-
 	<noscript>
-		This site relies on Javascript to retreive bank account data. You can manually view the JSON-formatted data. <a href="https://mcce-cdn.perny.dev/balances.json">Balances</a>
+		This site relies on Javascript to retreive bank account data. You can manually view the
+		JSON-formatted data. <a href="https://mcce-cdn.perny.dev/balances.json">Balances</a>
 		- <a href="https://mcce-cdn.perny.dev/transactions.json">Transactions</a>
 	</noscript>
 
 	<yesscript>
-	<div class="currency-toggle" role="group" aria-label="Currency format">
-		<button
-			class="mc-btn"
-			class:active={currencyFormat === 'original'}
-			aria-pressed={currencyFormat === 'original'}
-			onclick={() => (currencyFormat = 'original')}
-		>
-			<span class="face">Amounts in original currency</span>
-		</button>
-		<button
-			class="mc-btn"
-			class:active={currencyFormat === 'usd'}
-			aria-pressed={currencyFormat === 'usd'}
-			onclick={() => (currencyFormat = 'usd')}
-		>
-			<span class="face">Amounts in USD</span>
-		</button>
-	</div>
-
-	<div class="top-row">
-		{#each balances as balance}
-			{@render balanceCard(balance.balanceType, balance)}
-		{/each}
-		<div class="panel about">
-			<p>
-				This is an application to view the MC:CE bank account balance and transactions. It is
-				Open-Source under GPLv3 and available on
-				<a href="https://github.com/pernydev/mcce-open-bank-account">GitHub</a>. For additional
-				transparency, we post banking statements on
-				<a href="https://discord.gg/mojanglawsuit">Discord</a>.
-			</p>
-			{#if lastUpdated}
-				<p class="updated">
-					Last updated <time datetime={lastUpdated}>{formatLastUpdated(lastUpdated)}</time>
-				</p>
-			{/if}
+		<div class="currency-toggle" role="group" aria-label="Currency format">
+			<button
+				class="mc-btn"
+				class:active={currencyFormat === 'original'}
+				aria-pressed={currencyFormat === 'original'}
+				onclick={() => (currencyFormat = 'original')}
+			>
+				<span class="face">Amounts in original currency</span>
+			</button>
+			<button
+				class="mc-btn"
+				class:active={currencyFormat === 'usd'}
+				aria-pressed={currencyFormat === 'usd'}
+				onclick={() => (currencyFormat = 'usd')}
+			>
+				<span class="face">Amounts in USD</span>
+			</button>
 		</div>
-	</div>
 
-	<section>
-		<h2 id="funding-left">Funding left</h2>
-		<div class="funding">
-			<span class="funding-value" aria-labelledby="funding-left">
-				{Math.round(percentageUsed * 100)}%
-			</span>
-			<div class="meter" aria-hidden="true">
-				<div class="meter-fill" style="width: {percentageUsed * 100}%"></div>
+		<div class="top-row">
+			{#each balances as balance}
+				{@render balanceCard(balance.balanceType, balance)}
+			{/each}
+			<div class="panel about">
+				<p>
+					This is an application to view the MC: Consequences Edition bank account balance and
+					transactions. It is Open-Source under GPLv3 and available on
+					<a href="https://forgejo.perny.dev/mcce/open-bank-account">Forgejo</a>. For additional
+					transparency, you may request to see our banking statements in our
+					<a href="https://discord.gg/mojanglawsuit">Discord</a>.
+				</p>
+				{#if lastUpdated}
+					<p class="updated">
+						Last updated <time datetime={lastUpdated}>{formatLastUpdated(lastUpdated)}</time>
+					</p>
+				{/if}
 			</div>
 		</div>
-	</section>
 
-	{#if pendingTransactions.length !== 0}
 		<section>
-			<h2>Pending transactions</h2>
-			{@render transactions(pendingTransactions)}
+			<h2 id="funding-left">Funding left</h2>
+			<div class="funding">
+				<span class="funding-value" aria-labelledby="funding-left">
+					{Math.round(percentageUsed * 100)}%
+				</span>
+				<div class="meter" aria-hidden="true">
+					<div class="meter-fill" style="width: {percentageUsed * 100}%"></div>
+				</div>
+			</div>
 		</section>
-	{/if}
 
-	<section>
-		<h2>Booked transactions</h2>
-		{@render transactions(bookedTransactions)}
-	</section>
+		{#if pendingTransactions.length !== 0}
+			<section>
+				<h2>Pending transactions</h2>
+				{@render transactions(pendingTransactions)}
+			</section>
+		{/if}
+
+		<section>
+			<h2>Booked transactions</h2>
+			{@render transactions(bookedTransactions)}
+		</section>
 	</yesscript>
 
 	<p class="credits">
@@ -298,8 +298,7 @@
 
 	.mc-btn:hover .face,
 	.mc-btn:focus-visible .face {
-		background:
-			linear-gradient(0deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.2)), var(--face);
+		background: linear-gradient(0deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.2)), var(--face);
 	}
 
 	.mc-btn:focus-visible .face {
