@@ -10,6 +10,21 @@ export interface Transaction {
 	valueDate?: string;
 }
 
+export type StoredTransaction = Transaction & { hash?: string };
+
+export interface StoredTransactions {
+	transactions: {
+		booked: StoredTransaction[];
+		pending?: Transaction[];
+	};
+}
+
+export interface TransactionIdentifiers {
+	internalTransactionId?: string;
+	transactionId?: string;
+	endToEndId?: string;
+}
+
 export enum BalanceType {
 	INTERIM_AVAILABLE = 'interimAvailable',
 }
@@ -21,7 +36,7 @@ export interface Balance {
 
 export interface APIAccountTransactions {
 	transactions: {
-		booked: Transaction[];
+		booked: (Transaction & TransactionIdentifiers)[];
 		pending?: Transaction[];
 	};
 }

@@ -1,6 +1,7 @@
 import { env } from '$env/dynamic/private';
 import { json } from '@sveltejs/kit';
-import type { APIAccountBalance, APIAccountTransactions, APIJWTToken, Transaction } from '$lib/types';
+import type { APIAccountBalance, APIAccountTransactions, APIJWTToken, StoredTransaction, StoredTransactions, Transaction } from '$lib/types';
+import { hashTransaction, mergeBookedTransactions } from '$lib/ledger';
 
 export const POST = async ({ request }) => {
 	const cronToken = request.headers.get('x-cron-token');
@@ -46,20 +47,16 @@ export const POST = async ({ request }) => {
 		return new Response('Failed to get transactions', { status: 500 });
 	}
 
-	// TODO: cleaner way to type this?
 	const allowedKeys = ['remittanceInformationUnstructured', 'creditorName', 'transactionAmount', 'valueDate'] as (keyof Transaction)[];
 
-	// filter out sensitive data
-	const bookedTransactions = transactionsBody.transactions.booked.map(t => {
-		console.log(t);
-
-		return Object.fromEntries(
-			// array of key-value pairs of allowed key and current transactions' corresponding value,
-			// then turn it back into an object (fromEntries)
-			allowedKeys.map(key => [key, t[key]])
-		);
-	});
-
+	const incomingTransactions: (StoredTransaction & { hash: string })[] = await Promise.all(
+		transactionsBody.transactions.booked.map(async t => ({
+			...Object.fromEntries(
+				allowedKeys.map(key => [key, t[key]])
+			),
+			hash: await hashTransaction(t)
+		}))
+	);
 
 	const s3 = new Bun.S3Client({
 		accessKeyId: env.AWS_ACCESS_KEY_ID,
@@ -69,6 +66,21 @@ export const POST = async ({ request }) => {
 	});
 
 	const transactions = s3.file('transactions.json');
+
+	let storedTransactions: StoredTransaction[] = [];
+	if (await transactions.exists()) {
+		try {
+			const stored: StoredTransactions = await transactions.json();
+			storedTransactions = stored.transactions?.booked ?? [];
+		} catch (e) {
+			console.error('Failed to read stored transactions', e);
+			return new Response('Failed to read stored transactions', { status: 500 });
+		}
+	}
+
+	const bookedTransactions = mergeBookedTransactions(storedTransactions, incomingTransactions);
+	console.log(`${storedTransactions.length} stored + ${incomingTransactions.length} fetched -> ${bookedTransactions.length} booked`);
+
 	await Bun.write(transactions, JSON.stringify({
 		transactions: {
 			booked: bookedTransactions,
