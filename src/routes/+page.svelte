@@ -9,10 +9,16 @@
 	let balances: Balance[] = $state([]);
 	let lastUpdated: string | null = $state(null);
 	let currencyFormat: 'original' | 'usd' = $state('original');
+	let donatedSEK: number | null = $state(null);
 	let totals: { in: number; out: number } = $derived(
 		calculateTotals([...pendingTransactions, ...bookedTransactions])
 	);
 	let percentageUsed: number = $derived(totals.in === 0 ? 0 : 1 - totals.out / totals.in);
+	let sekUsdRate: number | null = $state(null);
+	let receivedSEK: number | null = $derived(totals.in === 0 ? null : totals.in);
+	let feeSEK: number | null = $derived(
+		donatedSEK === null || receivedSEK === null ? null : donatedSEK - receivedSEK
+	);
 
 	async function getTransactions() {
 		const response = await fetch(env.PUBLIC_TRANSACTIONS_DATA_URL);
@@ -26,6 +32,24 @@
 		const body: StoredBalances = await response.json();
 		balances = body.balances;
 		lastUpdated = body.lastUpdated ?? null;
+	}
+
+	async function getDonatedTotal() {
+		const response = await fetch('https://total-api.lawsuit.gg');
+		const body: { skr: number } = await response.json();
+		donatedSEK = body.skr;
+	}
+
+	function formatFromSEK(amount: number) {
+		if (currencyFormat === 'original') {
+			return new Intl.NumberFormat('sw-KE', { style: 'currency', currency: 'SEK' }).format(amount);
+		}
+		if (sekUsdRate === null) {
+			return 'Loading...';
+		}
+		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
+			amount * sekUsdRate
+		);
 	}
 
 	function formatLastUpdated(timestamp: string) {
@@ -88,7 +112,9 @@
 	onMount(async () => {
 		await getTransactions();
 		await getBalances();
-		fetchSEKUSDRate();
+		getDonatedTotal();
+		await fetchSEKUSDRate();
+		sekUsdRate = SEK_USD_RATE;
 	});
 </script>
 
@@ -223,6 +249,25 @@
 			</div>
 		</section>
 
+		<section>
+			<h2>GoFundMe fees</h2>
+			<div class="panel notice">
+				<p>
+					GoFundMe takes a fee out of every payment, where the amounts shown on this website are
+					what we have actually received in the account, not what was donated.
+				</p>
+				{#if donatedSEK !== null && receivedSEK !== null && feeSEK !== null}
+					<p>
+						In simple terms, {formatFromSEK(donatedSEK)} has been donated through GoFundMe, of which
+						{formatFromSEK(receivedSEK)} reached the account, where the difference of roughly
+						{formatFromSEK(feeSEK)} ({Math.round((feeSEK / donatedSEK) * 100)}%) went to fees.{#if currencyFormat === 'usd'}{' '}These
+							figures are converted from SEK at the current exchange rate, so they will move around
+							a little.{/if}
+					</p>
+				{/if}
+			</div>
+		</section>
+
 		{#if pendingTransactions.length !== 0}
 			<section>
 				<h2>Pending transactions</h2>
@@ -342,6 +387,16 @@
 		line-height: 1.2;
 		color: var(--accent);
 		text-shadow: 2px 2px 0 rgb(0 0 0 / 0.55);
+	}
+
+	.notice p {
+		font-size: 0.92rem;
+		color: var(--text-dim);
+		max-width: var(--measure);
+	}
+
+	.notice p + p {
+		margin-top: 0.75rem;
 	}
 
 	.about p {
