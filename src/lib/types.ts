@@ -45,6 +45,11 @@ export interface APIAccountBalance {
 	balances: object;
 }
 
+export interface StoredBalances {
+	balances: Balance[];
+	lastUpdated: string;
+}
+
 export interface APIJWTToken {
 	access: string;
 }

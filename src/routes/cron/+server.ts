@@ -104,7 +104,8 @@ export const POST = async ({ request }) => {
 
 	const balances = s3.file('balances.json');
 	await Bun.write(balances, JSON.stringify({
-		balances: balancesBody.balances
+		balances: balancesBody.balances,
+		lastUpdated: new Date().toISOString()
 	}));
 
 	return json({

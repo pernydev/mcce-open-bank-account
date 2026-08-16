@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { env } from '$env/dynamic/public';
 	import { fetchSEKUSDRate, SEK_USD_RATE } from '$lib/conversion';
-	import { BalanceType, type Balance, type Transaction } from '$lib/types';
+	import { BalanceType, type Balance, type StoredBalances, type Transaction } from '$lib/types';
 	import { onMount } from 'svelte';
 
 	let pendingTransactions: Transaction[] = $state([]);
 	let bookedTransactions: Transaction[] = $state([]);
 	let balances: Balance[] = $state([]);
+	let lastUpdated: string | null = $state(null);
 	let currencyFormat: 'original' | 'usd' = $state('original');
 	let totals: { in: number; out: number } = $derived(
 		calculateTotals([...pendingTransactions, ...bookedTransactions])
@@ -22,7 +23,17 @@
 
 	async function getBalances() {
 		const response = await fetch(env.PUBLIC_BALANCE_DATA_URL);
-		balances = (await response.json()).balances;
+		const body: StoredBalances = await response.json();
+		balances = body.balances;
+		lastUpdated = body.lastUpdated ?? null;
+	}
+
+	function formatLastUpdated(timestamp: string) {
+		const formatter = new Intl.DateTimeFormat(undefined, {
+			dateStyle: 'medium',
+			timeStyle: 'short'
+		});
+		return formatter.format(new Date(timestamp));
 	}
 
 	function f(currency: string, amount: string) {
@@ -145,6 +156,11 @@
 				For additional transparency, we post banking statements on
 				<a href="https://discord.gg/mojanglawsuit" class="text-blue"> Discord </a>.
 			</p>
+			{#if lastUpdated}
+				<p class="mt-2 text-xs text-subtext0">
+					Last updated <time datetime={lastUpdated}>{formatLastUpdated(lastUpdated)}</time>
+				</p>
+			{/if}
 		</div>
 	</div>
 
