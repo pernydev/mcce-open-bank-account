@@ -56,6 +56,18 @@
 		}
 	}
 
+	function isOutgoing(transaction: Transaction): boolean {
+		return transaction.transactionAmount?.amount.startsWith('-') ?? false;
+	}
+
+	function formatTotal(amount: number, currency: string) {
+		return f(currency, String(amount));
+	}
+
+	function currencyOf(transactions: Transaction[]): string {
+		return transactions.find((t) => t.transactionAmount)?.transactionAmount?.currency ?? 'SEK';
+	}
+
 	function calculateTotals(transactions: Transaction[]): { in: number; out: number } {
 		let inAmount = 0;
 		let outAmount = 0;
@@ -82,9 +94,9 @@
 
 {#snippet balanceCard(balanceType: BalanceType, balance: Balance)}
 	{#if balanceType === BalanceType.INTERIM_AVAILABLE}
-		<div class="flex min-w-[300px] flex-col gap-2 bg-mantle p-4">
-			<span class="text-lg font-bold text-subtext0"> Available </span>
-			<span class="text-2xl font-bold">
+		<div class="panel balance">
+			<span class="balance-label">Available</span>
+			<span class="balance-amount">
 				{f(balance.balanceAmount.currency, balance.balanceAmount.amount)}
 			</span>
 		</div>
@@ -92,25 +104,47 @@
 {/snippet}
 
 {#snippet transactions(transactions: Transaction[])}
-	<div class="overflow-x-auto">
-		<table class="mt-4 w-full">
+	{@const sums = calculateTotals(transactions)}
+	{@const currency = currencyOf(transactions)}
+	<div class="panel totals">
+		<div class="total is-in">
+			<span class="total-label">Total in</span>
+			<span class="total-amount">
+				<span class="direction" aria-hidden="true">+</span>{formatTotal(sums.in, currency)}
+			</span>
+		</div>
+		<div class="total is-out">
+			<span class="total-label">Total out</span>
+			<span class="total-amount">
+				<span class="direction" aria-hidden="true">−</span>{formatTotal(sums.out, currency)}
+			</span>
+		</div>
+	</div>
+	<div class="table-scroll">
+		<table>
 			<thead>
 				<tr>
-					<th class="text-left">Date</th>
-					<th class="text-left">Information</th>
-					<th class="text-left">Description</th>
-					<th class="text-right">Amount</th>
+					<th class="left">Date</th>
+					<th class="left">Information</th>
+					<th class="left">Description</th>
+					<th class="right">Amount</th>
 				</tr>
 			</thead>
-			<tbody class="divide-y divide-mantle">
+			<tbody>
 				{#each transactions as transaction}
-					<tr>
-						<td class="text-left">{transaction.valueDate || '-'}</td>
-						<td class="text-left">{transaction.remittanceInformationUnstructured || '-'}</td>
-						<td class="text-left">{transaction.creditorName || '-'}</td>
-						<td class="text-right">
+					{@const out = isOutgoing(transaction)}
+					<tr class={out ? 'is-out' : 'is-in'}>
+						<td class="left">{transaction.valueDate || '-'}</td>
+						<td class="left">{transaction.remittanceInformationUnstructured || '-'}</td>
+						<td class="left">{transaction.creditorName || '-'}</td>
+						<td class="right amount">
 							{#if transaction.transactionAmount}
-								{f(transaction.transactionAmount.currency, transaction.transactionAmount.amount)}
+								<span class="direction" aria-hidden="true">{out ? '−' : '+'}</span>
+								<span class="visually-hidden">{out ? 'Outgoing' : 'Incoming'}</span>
+								{f(
+									transaction.transactionAmount.currency,
+									transaction.transactionAmount.amount.replace('-', '')
+								)}
 							{:else}
 								-
 							{/if}
@@ -122,75 +156,375 @@
 	</div>
 {/snippet}
 
-<div class="mx-auto max-w-6xl px-2 pt-2 lg:pt-6">
-	<h1 class="sr-only">MC:CE Open Bank Account</h1>
+<div class="wrap">
+	<header class="page-head">
+		<h1>Open bank account</h1>
+		<p class="lede">
+			A read-only view of the account holding the community funds, showing what is left and
+			every single movement in &amp; out.
+		</p>
+	</header>
 
-	<div class="flex-inline gap-4">
+
+	<noscript>
+		This site relies on Javascript to retreive bank account data. You can manually view the JSON-formatted data. <a href="https://mcce-cdn.perny.dev/balances.json">Balances</a>
+		- <a href="https://mcce-cdn.perny.dev/transactions.json">Transactions</a>
+	</noscript>
+
+	<yesscript>
+	<div class="currency-toggle" role="group" aria-label="Currency format">
 		<button
-			class="border border-text p-2 {currencyFormat === 'original'
-				? 'bg-text text-mantle'
-				: 'bg-mantle text-text'}"
+			class="mc-btn"
+			class:active={currencyFormat === 'original'}
+			aria-pressed={currencyFormat === 'original'}
 			onclick={() => (currencyFormat = 'original')}
 		>
-			Original
+			<span class="face">Amounts in original currency</span>
 		</button>
 		<button
-			class="border border-text p-2 {currencyFormat === 'usd'
-				? 'bg-text text-mantle'
-				: 'bg-mantle text-text'}"
+			class="mc-btn"
+			class:active={currencyFormat === 'usd'}
+			aria-pressed={currencyFormat === 'usd'}
 			onclick={() => (currencyFormat = 'usd')}
 		>
-			Amounts in USD
+			<span class="face">Amounts in USD</span>
 		</button>
 	</div>
 
-	<div class="mt-4 flex min-h-32 flex-col gap-4 lg:flex-row">
+	<div class="top-row">
 		{#each balances as balance}
 			{@render balanceCard(balance.balanceType, balance)}
 		{/each}
-		<div class="flex-1 bg-mantle p-4">
-			<p class="text-md text-subtext-0 mt-2">
+		<div class="panel about">
+			<p>
 				This is an application to view the MC:CE bank account balance and transactions. It is
 				Open-Source under GPLv3 and available on
-				<a href="https://github.com/pernydev/mcce-open-bank-account" class="text-blue"> GitHub </a>.
-				For additional transparency, we post banking statements on
-				<a href="https://discord.gg/mojanglawsuit" class="text-blue"> Discord </a>.
+				<a href="https://github.com/pernydev/mcce-open-bank-account">GitHub</a>. For additional
+				transparency, we post banking statements on
+				<a href="https://discord.gg/mojanglawsuit">Discord</a>.
 			</p>
 			{#if lastUpdated}
-				<p class="mt-2 text-xs text-subtext0">
+				<p class="updated">
 					Last updated <time datetime={lastUpdated}>{formatLastUpdated(lastUpdated)}</time>
 				</p>
 			{/if}
 		</div>
 	</div>
 
-	<h2 class="mb-2 mt-8 block text-xl font-bold" id="funding-left">Funding left</h2>
-	<div class="flex gap-4">
-		<span aria-labelledby="funding-left">
-			{percentageUsed * 100}%
-		</span>
-		<div class="relative h-6 w-full bg-mantle" aria-hidden="true">
-			<div
-				class="absolute left-0 top-0 h-full w-full bg-subtext0"
-				style="width: {percentageUsed * 100}%"
-			></div>
+	<section>
+		<h2 id="funding-left">Funding left</h2>
+		<div class="funding">
+			<span class="funding-value" aria-labelledby="funding-left">
+				{Math.round(percentageUsed * 100)}%
+			</span>
+			<div class="meter" aria-hidden="true">
+				<div class="meter-fill" style="width: {percentageUsed * 100}%"></div>
+			</div>
 		</div>
-	</div>
+	</section>
 
 	{#if pendingTransactions.length !== 0}
-		<h2 class="mb-6 mt-16 text-xl font-bold">Pending Transactions</h2>
-		{@render transactions(pendingTransactions)}
+		<section>
+			<h2>Pending transactions</h2>
+			{@render transactions(pendingTransactions)}
+		</section>
 	{/if}
 
-	<h2 class="mb-6 mt-16 text-xl font-bold">Booked Transactions</h2>
-	{@render transactions(bookedTransactions)}
+	<section>
+		<h2>Booked transactions</h2>
+		{@render transactions(bookedTransactions)}
+	</section>
+	</yesscript>
 
-	<div class="flex gap-8">
-		<a href="https://www.exchangerate-api.com" class="mt-8 block text-xs text-blue"
-			>Rates By Exchange Rate API</a
-		>
-		<a href="https://gocardless.com/bank-account-data/" class="mt-8 block text-xs text-blue"
-			>Bank Account Data By GoCardless</a
-		>
-	</div>
+	<p class="credits">
+		<a href="https://www.exchangerate-api.com">Rates by Exchange Rate API</a>
+		<a href="https://gocardless.com/bank-account-data/">Bank account data by GoCardless</a>
+	</p>
 </div>
+
+<style>
+	.page-head {
+		margin-block: 3rem 2rem;
+	}
+
+	.lede {
+		color: var(--text-dim);
+		margin-top: 0.75rem;
+		max-width: var(--measure);
+	}
+
+	.currency-toggle {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.mc-btn {
+		--face: var(--grey-5);
+		--lip-top: var(--grey-4);
+		--lip-bottom: var(--off-black);
+		display: inline-block;
+		padding: 0;
+		background: none;
+		border: 0;
+		font-family: var(--pixel);
+		cursor: pointer;
+	}
+
+	.mc-btn.active {
+		--face: var(--green-5);
+		--lip-top: #47983a;
+		--lip-bottom: var(--green-6);
+	}
+
+	.face {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 2.75rem;
+		padding: 0.75rem 1.25rem;
+		background: var(--face);
+		border: 2px solid var(--off-black);
+		box-shadow:
+			0 4px 0 0 rgb(0 0 0 / 0.25),
+			inset 0 6px 0 0 var(--lip-top),
+			inset 0 -6px 0 0 var(--lip-bottom);
+		color: #fff;
+		text-shadow: 2px 2px 0 rgb(0 0 0 / 0.55);
+		font-size: 1rem;
+		line-height: 1.2;
+		letter-spacing: 0.02em;
+	}
+
+	.mc-btn:hover .face,
+	.mc-btn:focus-visible .face {
+		background:
+			linear-gradient(0deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.2)), var(--face);
+	}
+
+	.mc-btn:focus-visible .face {
+		outline: 2px solid #fff;
+		outline-offset: 2px;
+	}
+
+	.mc-btn:active .face {
+		background: linear-gradient(0deg, rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.1)), var(--face);
+		box-shadow:
+			0 0 0 0 rgb(0 0 0 / 0.25),
+			inset 0 6px 0 0 var(--lip-top),
+			inset 0 -6px 0 0 var(--lip-bottom);
+		transform: translateY(4px);
+	}
+
+	.top-row {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+		gap: 1rem;
+		margin-top: 1.5rem;
+	}
+
+	.balance {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		justify-content: center;
+	}
+
+	.balance-label {
+		font-family: var(--pixel);
+		font-size: 0.95rem;
+		letter-spacing: 0.04em;
+		color: var(--text-dim);
+	}
+
+	.balance-amount {
+		font-family: var(--pixel);
+		font-size: clamp(1.5rem, 4vw, 2rem);
+		line-height: 1.2;
+		color: var(--accent);
+		text-shadow: 2px 2px 0 rgb(0 0 0 / 0.55);
+	}
+
+	.about p {
+		font-size: 0.92rem;
+		color: var(--text-dim);
+	}
+
+	.about .updated {
+		margin-top: 0.75rem;
+		font-size: 0.85rem;
+	}
+
+	section {
+		margin-top: 3rem;
+	}
+
+	section h2 {
+		margin-bottom: 0.85rem;
+	}
+
+	.funding {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.funding-value {
+		font-family: var(--pixel);
+		font-size: 1.05rem;
+		min-width: 4ch;
+	}
+
+	.meter {
+		position: relative;
+		height: 1.5rem;
+		width: 100%;
+		background: var(--grey-6);
+		border: 2px solid;
+		border-color: var(--off-black) var(--grey-4) var(--grey-4) var(--off-black);
+	}
+
+	.meter-fill {
+		position: absolute;
+		inset: 0 auto 0 0;
+		background: var(--green-5);
+		box-shadow:
+			inset 0 4px 0 0 var(--green-4),
+			inset 0 -4px 0 0 var(--green-6);
+	}
+
+	.table-scroll {
+		overflow-x: auto;
+		border: 2px solid var(--off-black);
+		box-shadow:
+			inset 0 4px 0 0 var(--grey-5),
+			inset 0 -4px 0 0 var(--off-black);
+		background: var(--bg-raised);
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.92rem;
+	}
+
+	th {
+		font-family: var(--pixel);
+		font-weight: normal;
+		font-size: 0.9rem;
+		letter-spacing: 0.04em;
+		color: var(--text-dim);
+		border-bottom: 2px solid var(--grey-5);
+		padding: 0.85rem 1rem;
+		white-space: nowrap;
+	}
+
+	td {
+		padding: 0.7rem 1rem;
+		color: var(--text-dim);
+		vertical-align: top;
+	}
+
+	tbody tr + tr td {
+		border-top: 1px solid var(--grey-5);
+	}
+
+	tbody tr:hover td {
+		background: rgb(255 255 255 / 0.03);
+		color: var(--text);
+	}
+
+	tbody td:first-child {
+		border-left: 4px solid transparent;
+	}
+
+	tbody .is-in td:first-child {
+		border-left-color: var(--green-5);
+	}
+
+	tbody .is-out td:first-child {
+		border-left-color: var(--brown-3);
+	}
+
+	.amount {
+		font-family: var(--pixel);
+		white-space: nowrap;
+		color: var(--text);
+	}
+
+	.is-in .amount {
+		color: var(--green-2);
+	}
+
+	.is-out .amount {
+		color: var(--grey-2);
+	}
+
+	.direction {
+		display: inline-block;
+		min-width: 1ch;
+		margin-right: 0.15em;
+	}
+
+	.totals {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+		gap: 1rem;
+		margin-bottom: 1rem;
+	}
+
+	.total {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		padding-left: 0.85rem;
+		border-left: 4px solid transparent;
+	}
+
+	.total.is-in {
+		border-left-color: var(--green-5);
+	}
+
+	.total.is-out {
+		border-left-color: var(--brown-3);
+	}
+
+	.total-label {
+		font-family: var(--pixel);
+		font-size: 0.9rem;
+		letter-spacing: 0.04em;
+		color: var(--text-dim);
+	}
+
+	.total-amount {
+		font-family: var(--pixel);
+		font-size: 1.35rem;
+		line-height: 1.2;
+		white-space: nowrap;
+		text-shadow: 2px 2px 0 rgb(0 0 0 / 0.55);
+	}
+
+	.is-in .total-amount {
+		color: var(--green-2);
+	}
+
+	.is-out .total-amount {
+		color: var(--grey-2);
+	}
+
+	.left {
+		text-align: left;
+	}
+
+	.right {
+		text-align: right;
+	}
+
+	.credits {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 2rem;
+		margin-top: 2rem;
+		font-size: 0.8rem;
+	}
+</style>

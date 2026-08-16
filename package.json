@@ -38,7 +38,6 @@
 		"vite": "^6.0.0"
 	},
 	"dependencies": {
-		"@fontsource/jetbrains-mono": "^5.1.2",
 		"svelte-adapter-bun": "^0.5.2"
 	}
 }
