@@ -2,6 +2,22 @@ import { env } from '$env/dynamic/private';
 import { json } from '@sveltejs/kit';
 import type { APIAccountBalance, APIAccountTransactions, APIJWTToken, StoredTransaction, StoredTransactions, Transaction } from '$lib/types';
 import { hashTransaction, mergeBookedTransactions } from '$lib/ledger';
+import type { S3File } from 'bun';
+
+async function uploadJSON(file: S3File, body: string) {
+	const resp = await fetch(file.presign({ method: 'PUT' }), {
+		method: 'PUT',
+		headers: {
+			'Content-Type': 'application/json',
+			'Cache-Control': 'no-cache'
+		},
+		body
+	});
+
+	if (!resp.ok) {
+		throw new Error(`Upload failed (${resp.status}): ${await resp.text()}`);
+	}
+}
 
 export const POST = async ({ request }) => {
 	const cronToken = request.headers.get('x-cron-token');
@@ -81,7 +97,7 @@ export const POST = async ({ request }) => {
 	const bookedTransactions = mergeBookedTransactions(storedTransactions, incomingTransactions);
 	console.log(`${storedTransactions.length} stored + ${incomingTransactions.length} fetched -> ${bookedTransactions.length} booked`);
 
-	await Bun.write(transactions, JSON.stringify({
+	await uploadJSON(transactions, JSON.stringify({
 		transactions: {
 			booked: bookedTransactions,
 			pending: transactionsBody.transactions.pending
@@ -103,7 +119,7 @@ export const POST = async ({ request }) => {
 	}
 
 	const balances = s3.file('balances.json');
-	await Bun.write(balances, JSON.stringify({
+	await uploadJSON(balances, JSON.stringify({
 		balances: balancesBody.balances,
 		lastUpdated: new Date().toISOString()
 	}));
