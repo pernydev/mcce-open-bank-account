@@ -1,11 +1,18 @@
 <script lang="ts">
 	import { env } from '$env/dynamic/public';
 	import { fetchSEKUSDRate, SEK_USD_RATE } from '$lib/conversion';
-	import { BalanceType, type Balance, type StoredBalances, type Transaction } from '$lib/types';
+	import { annotationFor, documents } from '$lib/annotations';
+	import {
+		BalanceType,
+		type Balance,
+		type StoredBalances,
+		type StoredTransaction,
+		type Transaction
+	} from '$lib/types';
 	import { onMount } from 'svelte';
 
 	let pendingTransactions: Transaction[] = $state([]);
-	let bookedTransactions: Transaction[] = $state([]);
+	let bookedTransactions: StoredTransaction[] = $state([]);
 	let balances: Balance[] = $state([]);
 	let lastUpdated: string | null = $state(null);
 	let currencyFormat: 'original' | 'usd' = $state('original');
@@ -129,7 +136,7 @@
 	{/if}
 {/snippet}
 
-{#snippet transactions(transactions: Transaction[])}
+{#snippet transactions(transactions: StoredTransaction[])}
 	{@const sums = calculateTotals(transactions)}
 	{@const currency = currencyOf(transactions)}
 	<div class="panel totals">
@@ -153,16 +160,25 @@
 					<th class="left">Date</th>
 					<th class="left">Information</th>
 					<th class="left">Description</th>
+					<th class="left">Document</th>
 					<th class="right">Amount</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each transactions as transaction}
 					{@const out = isOutgoing(transaction)}
+					{@const annotation = annotationFor(transaction.hash)}
 					<tr class={out ? 'is-out' : 'is-in'}>
 						<td class="left">{transaction.valueDate || '-'}</td>
 						<td class="left">{transaction.remittanceInformationUnstructured || '-'}</td>
-						<td class="left">{transaction.creditorName || '-'}</td>
+						<td class="left">{annotation?.description || '-'}</td>
+						<td class="left">
+							{#if annotation?.document}
+								<a href={annotation.document}>View</a>
+							{:else}
+								-
+							{/if}
+						</td>
 						<td class="right amount">
 							{#if transaction.transactionAmount}
 								<span class="direction" aria-hidden="true">{out ? '−' : '+'}</span>
@@ -195,6 +211,14 @@
 		This site relies on Javascript to retreive bank account data. You can manually view the
 		JSON-formatted data. <a href="https://mcce-cdn.perny.dev/balances.json">Balances</a>
 		- <a href="https://mcce-cdn.perny.dev/transactions.json">Transactions</a>
+		{#if documents.length !== 0}
+			<p>Documents attached to transactions:</p>
+			<ul>
+				{#each documents as { description, document }}
+					<li><a href={document}>{description || document}</a></li>
+				{/each}
+			</ul>
+		{/if}
 	</noscript>
 
 	<yesscript>

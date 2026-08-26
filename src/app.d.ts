@@ -7,10 +7,12 @@ declare global {
 		// interface PageData {}
 		// interface PageState {}
 		// interface Platform {}
-
-		
-
 	}
+}
+
+declare module '*.toml' {
+	const value: unknown;
+	export default value;
 }
 
 export {};
